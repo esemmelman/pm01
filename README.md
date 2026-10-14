@@ -11,3 +11,5 @@ Backend: bnaimitzvah (`fgomaujsdblpzxhnnqrg`). Only `public.pm01_items`, `public
 Static source is in `dist/`. Serve with any static web server. Sites deployment identity is in `.openai/hosting.json`. Changes are tracked and pushed to `esemmelman/pm01`.
 
 Import DayFlow opens a separate, read-only calendar. DayFlow data is stored in `pm01_dayflow_entries` and never written to individual planner items.
+
+DayFlow import needs no sign-in. It reads the explicitly public, read-only `pm01_dayflow_calendar_export` view in DayFlow, limited to task IDs, titles, dates, and start times for October 2026–June 2027.
