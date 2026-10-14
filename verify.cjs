@@ -1,6 +1,6 @@
 const fs=require('node:fs');const vm=require('node:vm');const assert=require('node:assert/strict');
 const elements=new Map();function element(){return {children:[],value:'',classList:{toggle(){},contains(){return false}},append(...children){this.children.push(...children)},replaceChildren(...children){this.children=children},setAttribute(){},addEventListener(){}}}
-const document={getElementById(id){if(!elements.has(id))elements.set(id,element());return elements.get(id)},createElement:element,createDocumentFragment:element,addEventListener(){}};
+const document={body:element(),getElementById(id){if(!elements.has(id))elements.set(id,element());return elements.get(id)},createElement:element,createDocumentFragment:element,addEventListener(){}};
 const source=fs.readFileSync('dist/app.js','utf8');const context={document,window:{addEventListener(){}},fetch,console,setTimeout,clearTimeout,confirm:()=>true};vm.createContext(context);
 vm.runInContext(source.replace(/refresh\(\);\s*$/,''),context);
 (async()=>{vm.runInContext("selected='test';buildGrid([])",context);const rows=elements.get('grid').children[0].children;const dates=rows.filter(r=>r.className!=='spacer');assert.equal(dates.length,273);assert.equal(dates[0].children[0].textContent,'10-01 Thu');assert.equal(dates.at(-1).children[0].textContent,'06-30 Wed');assert.equal(rows.filter(r=>r.className==='spacer').length,39);for(let i=0;i<rows.length;i++)if(rows[i].className==='spacer')assert.match(rows[i-1].children[0].textContent,/Sun$/);
