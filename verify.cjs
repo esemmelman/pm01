@@ -1,5 +1,5 @@
 const fs=require('node:fs');const vm=require('node:vm');const assert=require('node:assert/strict');
-const elements=new Map();function element(){return {children:[],value:'',classList:{toggle(){},contains(){return false}},append(...children){this.children.push(...children)},replaceChildren(...children){this.children=children},setAttribute(){},addEventListener(){},after(){}}}
+const elements=new Map();function element(){return {dataset:{},style:{},children:[],value:'',classList:{toggle(){},contains(){return false}},append(...children){this.children.push(...children)},replaceChildren(...children){this.children=children},setAttribute(){},addEventListener(){},after(){}}}
 const document={body:element(),getElementById(id){if(!elements.has(id))elements.set(id,element());return elements.get(id)},createElement:element,createDocumentFragment:element,addEventListener(){}};
 const source=fs.readFileSync('dist/app.js','utf8');const context={document,window:{addEventListener(){}},fetch,console,setTimeout,clearTimeout,confirm:()=>true};vm.createContext(context);
 vm.runInContext(source.replace(/refresh\(\);\s*$/,''),context);
