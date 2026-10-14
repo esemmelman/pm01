@@ -1,3 +1,4 @@
 node_modules/
 *.tar.gz
 .openai/*.local.*
+supabase/.temp/

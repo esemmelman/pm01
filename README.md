@@ -2,11 +2,11 @@
 
 Public daily planner: https://esemmelman.github.io/pm01/
 
-Windows-style item list with add, rename, and delete. Single selection opens a daily grid from October 1, 2026 through June 30, 2027. Notes save automatically to Supabase, with visible save status and retry on failure.
+Windows-style item list with add, rename, and delete. Single selection opens a daily grid from October 1, 2026 through June 30, 2027. Click the + in a Date cell to add a named entry for that date. Multiple entries can share a date. Click an entry in Information to open its rich text editor; its name and notes save automatically to Supabase, with visible save status and retry on failure. The current frontend version is 1.1.0.
 
 Double-click an item for rich text notes with a formatting toolbar and automatic saving.
 
-Backend: bnaimitzvah (`fgomaujsdblpzxhnnqrg`). Only `public.pm01_items`, `public.pm01_entries`, and `public.pm01_item_notes` are used. These tables allow public access without login. The frontend contains only a publishable API key. Deleting an item also deletes its notes.
+Backend: bnaimitzvah (`fgomaujsdblpzxhnnqrg`). Planner data uses `public.pm01_items`, `public.pm01_entries`, `public.pm01_item_notes`, and `public.pm01_date_items`. These tables allow public access without login. The frontend contains only a publishable API key. Deleting a listbox item also deletes its notes and dated entries. The new dated-entry schema is recorded in `supabase/migrations/`.
 
 Static source is in `dist/`. Serve with any static web server. Changes pushed to `main` in `esemmelman/pm01` automatically deploy `dist/` to GitHub Pages through `.github/workflows/pages.yml`. The previous Sites deployment identity is retained in `.openai/hosting.json`.
 
