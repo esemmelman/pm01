@@ -1,8 +1,12 @@
 const URL='https://fgomaujsdblpzxhnnqrg.supabase.co/rest/v1/';
 const KEY='sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i';
 const $=id=>document.getElementById(id);
-const APP_VERSION='1.2.0';
+const APP_VERSION='1.2.1';
 let items=[],selected=null,loadVersion=0,dialogMode='add',viewMode='empty';
+let itemClickTimer;
+function cancelItemClick(){clearTimeout(itemClickTimer);itemClickTimer=null}
+// Keep the listbox visible long enough for the second click to reach it.
+function scheduleChoose(){cancelItemClick();itemClickTimer=setTimeout(()=>{itemClickTimer=null;choose()},600)}
 let dateItems=[],activeDateItem=null,dateDraft=null,dateCreating=false;
 const datePending=new Map(),dateCells=new Map();
 function hasPending(){return pending.size||notesPending.size||datePending.size}
@@ -15,7 +19,7 @@ function sortItems(){items.sort((a,b)=>a.name.localeCompare(b.name,'en',{sensiti
 function renderItems(){sortItems();const value=selected;$('items').replaceChildren(...items.map(item=>{const option=document.createElement('option');option.value=item.id;option.textContent=item.name;return option}));$('items').value=value||'';$('edit').disabled=$('delete').disabled=!selected}
 function setSidebar(visible){$('item-panel').hidden=!visible;$('toggle-items').textContent=visible?'‹':'›';$('toggle-items').setAttribute('aria-expanded',String(visible));$('toggle-items').setAttribute('aria-label',visible?'Hide planner items':'Show planner items');$('toggle-items').title=visible?'Hide planner items':'Show planner items'}
 $('toggle-items').onclick=()=>setSidebar($('item-panel').hidden);
-function setView(mode){viewMode=mode;$('all-items').setAttribute('aria-pressed',String(mode==='all'));$('import-dayflow').setAttribute('aria-pressed',String(mode==='dayflow'))}
+function setView(mode){cancelItemClick();viewMode=mode;$('all-items').setAttribute('aria-pressed',String(mode==='all'));$('import-dayflow').setAttribute('aria-pressed',String(mode==='dayflow'))}
 function showEmpty(){selected=null;setView('empty');renderItems();setSidebar(true);$('grid-wrap').hidden=true;$('empty').hidden=false;$('title').textContent='Your daily plan';$('description').textContent='Choose an item on the left, or add a new item.'}
 async function refresh(){try{items=await api('pm01_items?select=*&order=created_at.asc');sortItems();selected=items.find(item=>item.id===selected)?.id||null;renderItems();if(viewMode==='all')await showAll();else if(viewMode==='dayflow')await importDayflow();else if(selected)await choose();else{showEmpty();status('Connected · All changes saved')}}catch(error){status(error.message+' · Click to retry',true)}}
 async function apiRows(path){const rows=[];for(let offset=0;;offset+=1000){const page=await api(path+'&limit=1000&offset='+offset);rows.push(...page);if(page.length<1000)return rows}}
@@ -48,8 +52,8 @@ function openDialog(mode){dialogMode=mode;$('dialog-title').textContent=mode==='
 $('add').onclick=$('first-add').onclick=()=>openDialog('add');$('edit').onclick=()=>openDialog('edit');$('cancel').onclick=()=>$('dialog').close();
 $('item-form').onsubmit=async event=>{event.preventDefault();const name=$('name').value.trim();if(!name){$('dialog-error').textContent='Enter an item name.';return}$('confirm').disabled=true;try{if(dialogMode==='add'){const [item]=await api('pm01_items','POST',{name});items.push(item);selected=item.id}else{await api('pm01_items?id=eq.'+selected,'PATCH',{name});items.find(i=>i.id===selected).name=name}renderItems();$('dialog').close();await choose()}catch(error){$('dialog-error').textContent=error.message}finally{$('confirm').disabled=false}};
 $('delete').onclick=async()=>{const item=items.find(i=>i.id===selected);if(!item||!confirm(`Delete “${item.name}” and all its daily information?`))return;$('delete').disabled=true;try{await flush();if(hasPending()||saving)throw new Error('Wait for notes to save before deleting.');await api('pm01_items?id=eq.'+item.id,'DELETE');items=items.filter(i=>i.id!==item.id);selected=null;++loadVersion;dismissNotes();showEmpty();status('Item deleted')}catch(error){status(error.message,true)}finally{renderItems()}};
-$('items').addEventListener('change',choose);
-$('items').addEventListener('click',event=>{if(event.detail===1)choose()});
+$('items').addEventListener('change',scheduleChoose);
+$('items').addEventListener('click',event=>{if(event.detail===1)scheduleChoose();else if(event.detail>1)cancelItemClick()});
 $('status').onclick=()=>{if(hasPending())flush();else if(viewMode==='all')showAll();else if(viewMode==='dayflow')importDayflow();else if(selected)choose();else refresh()};
 window.addEventListener('beforeunload',event=>{if(hasPending()||saving||dateCreating){event.preventDefault();event.returnValue=''}});document.addEventListener('visibilitychange',()=>{if(document.hidden)flush()});window.addEventListener('online',()=>hasPending()?flush():refresh());
 // Persist rich item notes separately from the daily grid.
@@ -67,7 +71,7 @@ $('notes-editor').addEventListener('input',queueNote);$('notes-editor').addEvent
 $('notes-toolbar').addEventListener('mousedown',event=>{if(event.target.closest('button'))event.preventDefault()});
 $('notes-toolbar').addEventListener('click',event=>{const button=event.target.closest('button');if(!button||$('notes-editor').contentEditable!=='true')return;$('notes-editor').focus();if(button.dataset.command==='dateStamp')document.execCommand('insertText',false,dateStamp());else document.execCommand(button.dataset.command,false,button.dataset.value||null);queueNote()});
 $('notes-close').textContent='Daily grid';$('notes-close').setAttribute('aria-label','Show daily grid');$('notes-close').onclick=choose;
-$('notes-retry').onclick=()=>notesPending.size?flush():openNotes();$('items').addEventListener('dblclick',openNotes);
+$('notes-retry').onclick=()=>notesPending.size?flush():openNotes();$('items').addEventListener('dblclick',()=>{cancelItemClick();openNotes()});
 $('items').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();openNotes()}});
 
 // Each dated item has its own automatically saved rich text notes.
