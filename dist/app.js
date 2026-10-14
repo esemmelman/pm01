@@ -1,12 +1,13 @@
 const URL='https://fgomaujsdblpzxhnnqrg.supabase.co/rest/v1/';
 const KEY='sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i';
 const $=id=>document.getElementById(id);
+const APP_VERSION='1.0.1';
 let items=[],selected=null,loadVersion=0,dialogMode='add';
 function todayKey(now=new Date()){const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Los_Angeles',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now);const part=type=>parts.find(p=>p.type===type).value;return `${part('year')}-${part('month')}-${part('day')}`}
 function scrollToToday(){const wrap=$('grid-wrap');const row=document.querySelector('tr.today');wrap.scrollTop=0;if(row){const header=wrap.querySelector('thead');wrap.scrollTop=Math.max(0,row.getBoundingClientRect().top-wrap.getBoundingClientRect().top-header.getBoundingClientRect().height)}}
 const pending=new Map();let saving=false,saveTimer;
 async function api(path,method='GET',body){const response=await fetch(URL+path,{method,headers:{apikey:KEY,'Content-Type':'application/json',Prefer:'return=representation,resolution=merge-duplicates'},body:body===undefined?undefined:JSON.stringify(body)});if(!response.ok){let error;try{error=await response.json()}catch{}throw new Error(error?.message||`Connection error (${response.status})`)}return response.status===204?null:response.json()}
-function status(message,error=false){$('status').textContent=message;$('status').classList.toggle('error',error)}
+function status(message,error=false){$('status').textContent=`v${APP_VERSION} · ${message}`;$('status').classList.toggle('error',error)}
 function sortItems(){items.sort((a,b)=>a.name.localeCompare(b.name,'en',{sensitivity:'base'}))}
 function renderItems(){sortItems();const value=selected;$('items').replaceChildren(...items.map(item=>{const option=document.createElement('option');option.value=item.id;option.textContent=item.name;return option}));$('items').value=value||'';$('edit').disabled=$('delete').disabled=!selected}
 async function refresh(){try{items=await api('pm01_items?select=*&order=created_at.asc');sortItems();let remembered;try{remembered=localStorage.getItem('pm01.selectedItem')}catch{}selected=items.find(item=>item.id===remembered)?.id||items[0]?.id||null;renderItems();if(selected)await choose();else status('Connected · All changes saved')}catch(error){status(error.message+' · Click to retry',true)}}
