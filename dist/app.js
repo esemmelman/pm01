@@ -1,7 +1,7 @@
 const URL='https://fgomaujsdblpzxhnnqrg.supabase.co/rest/v1/';
 const KEY='sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i';
 const $=id=>document.getElementById(id);
-const APP_VERSION='1.1.0';
+const APP_VERSION='1.1.1';
 let items=[],selected=null,loadVersion=0,dialogMode='add';
 let dateItems=[],activeDateItem=null,dateDraft=null,dateCreating=false;
 const datePending=new Map(),dateCells=new Map();
@@ -71,7 +71,7 @@ $('date-add-form').onsubmit=async event=>{
   const draft=dateDraft;dateCreating=true;$('date-add-confirm').disabled=true;status('Adding item…');
   try{const [entry]=await api('pm01_date_items','POST',{item_id:draft.itemId,entry_date:draft.date,title});
     if(selected===draft.itemId){dateItems.push(entry);renderDateItems()}
-    if($('date-add-dialog').open&&dateDraft===draft){$('date-add-dialog').close();if(selected===draft.itemId)openDateNote(entry.id)}
+    if($('date-add-dialog').open&&dateDraft===draft)$('date-add-dialog').close();
     status(hasPending()?'Unsaved changes…':'All changes saved');
   }catch(error){$('date-add-error').textContent=error.message;status('Could not add item: '+error.message,true)}
   finally{dateCreating=false;$('date-add-confirm').disabled=false}

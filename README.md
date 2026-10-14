@@ -2,7 +2,7 @@
 
 Public daily planner: https://esemmelman.github.io/pm01/
 
-Windows-style item list with add, rename, and delete. Single selection opens a daily grid from October 1, 2026 through June 30, 2027. Click the + in a Date cell to add a named entry for that date. Multiple entries can share a date. Click an entry in Information to open its rich text editor; its name and notes save automatically to Supabase, with visible save status and retry on failure. The current frontend version is 1.1.0.
+Windows-style item list with add, rename, and delete. Single selection opens a daily grid from October 1, 2026 through June 30, 2027. Click the + in a Date cell to add a named entry for that date. Multiple entries can share a date. Click an entry in Information to open its rich text editor; its name and notes save automatically to Supabase, with visible save status and retry on failure. The current frontend version is 1.1.1.
 
 Double-click an item for rich text notes with a formatting toolbar and automatic saving.
 
