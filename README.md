@@ -9,3 +9,5 @@ Double-click an item for rich text notes with a formatting toolbar and automatic
 Backend: bnaimitzvah (`fgomaujsdblpzxhnnqrg`). Only `public.pm01_items`, `public.pm01_entries`, and `public.pm01_item_notes` are used. These tables allow public access without login. The frontend contains only a publishable API key. Deleting an item also deletes its notes.
 
 Static source is in `dist/`. Serve with any static web server. Sites deployment identity is in `.openai/hosting.json`. Changes are tracked and pushed to `esemmelman/pm01`.
+
+Import DayFlow opens a separate, read-only calendar. DayFlow data is stored in `pm01_dayflow_entries` and never written to individual planner items.
