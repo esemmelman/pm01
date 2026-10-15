@@ -1,7 +1,7 @@
 const URL='https://fgomaujsdblpzxhnnqrg.supabase.co/rest/v1/';
 const KEY='sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i';
 const $=id=>document.getElementById(id);
-const APP_VERSION='1.3.7';
+const APP_VERSION='1.3.8';
 let items=[],selected=null,loadVersion=0,dialogMode='add',viewMode='empty';
 let itemClickTimer;
 function cancelItemClick(){clearTimeout(itemClickTimer);itemClickTimer=null}
@@ -12,7 +12,11 @@ let dateClickTimer,dragEntryId=null;
 function cancelDateClick(){clearTimeout(dateClickTimer);dateClickTimer=null}
 function clearDateDrag(){dragEntryId=null;document.querySelectorAll('.date-entry.drag-ready').forEach(button=>{button.draggable=false;button.classList.remove('drag-ready')});document.querySelectorAll('.date-drop-target').forEach(cell=>cell.classList.remove('date-drop-target'))}
 const datePending=new Map(),dateCells=new Map();
-let informationDates=[];
+let informationDates=[],tasksOnly=false;
+function dateDistance(date){return Math.round((Date.parse(date+'T00:00:00Z')-Date.parse(todayKey()+'T00:00:00Z'))/86400000)}
+function dateTooltip(date){const days=dateDistance(date),weeks=Math.round(Math.abs(days)/7*10)/10;return `${weeks} weeks, ${Math.abs(days)} days ${days<0?'before':'from'} today`}
+function filterTaskDates(dates){const occupied=new Set(dates);for(const row of $('grid').querySelectorAll('tr'))row.hidden=tasksOnly&&(!row.dataset.date||!occupied.has(row.dataset.date))}
+$('tasks-only').onclick=()=>{tasksOnly=!tasksOnly;$('tasks-only').setAttribute('aria-pressed',String(tasksOnly));updateInformationSpan()};
 function updateInformationSpan(){
   const dates=[...informationDates,...(viewMode==='dayflow'?[]:dateItems.filter(entry=>(viewMode==='all'||entry.item_id===selected)&&dateCells.has(entry.entry_date)).map(entry=>entry.entry_date))].sort();
   const label=$('information-span');label.hidden=false;
@@ -20,8 +24,9 @@ function updateInformationSpan(){
   const daysUntil=date=>Math.max(0,Math.round((Date.parse(date+'T00:00:00Z')-Date.parse(today+'T00:00:00Z'))/86400000));
   const totalDays=last?daysUntil(last):null;
   const totalWeeks=totalDays===null?null:Math.round(totalDays/7*10)/10;
-  label.textContent=`Next task: ${next?daysUntil(next):'—'}\u00a0\u00a0\u00a0Total: ${last?`${totalWeeks}, ${totalDays}`:'—, —'}`;
-  label.title=`From ${today} · Next task: days until ${next||'none'} · Total: weeks, days until ${last||'none'}`;
+  label.textContent=`Next: ${next?daysUntil(next):'—'} days\u00a0\u00a0\u00a0end: ${last?totalWeeks:'—'} weeks, ${last?totalDays:'—'} days`;
+  label.title=`From ${today} · Next: days until ${next||'none'} · end: weeks, days until ${last||'none'}`;
+  filterTaskDates(dates);
 }
 function hasPending(){return pending.size||notesPending.size||datePending.size||multiPending.size}
 function todayKey(now=new Date()){const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Los_Angeles',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now);const part=type=>parts.find(p=>p.type===type).value;return `${part('year')}-${part('month')}-${part('day')}`}
@@ -33,7 +38,7 @@ function sortItems(){items.sort((a,b)=>a.name.localeCompare(b.name,'en',{sensiti
 function renderItems(){sortItems();const value=selected;$('items').replaceChildren(...items.map(item=>{const option=document.createElement('option');option.value=item.id;option.textContent=item.name;return option}));$('items').value=value||'';$('open-notes').disabled=$('open-multiple-notes').disabled=$('edit').disabled=$('delete').disabled=!selected}
 function setSidebar(visible){$('item-panel').hidden=!visible;$('toggle-items').textContent=visible?'‹':'›';$('toggle-items').setAttribute('aria-expanded',String(visible));$('toggle-items').setAttribute('aria-label',visible?'Hide planner items':'Show planner items');$('toggle-items').title=visible?'Hide planner items':'Show planner items'}
 $('toggle-items').onclick=()=>setSidebar($('item-panel').hidden);
-function setView(mode){cancelItemClick();cancelDateClick();clearDateDrag();viewMode=mode;$('all-items').setAttribute('aria-pressed',String(mode==='all'));$('import-dayflow').setAttribute('aria-pressed',String(mode==='dayflow'))}
+function setView(mode){cancelItemClick();cancelDateClick();clearDateDrag();viewMode=mode;$('tasks-only').disabled=mode==='empty';$('all-items').setAttribute('aria-pressed',String(mode==='all'));$('import-dayflow').setAttribute('aria-pressed',String(mode==='dayflow'))}
 function showEmpty(){selected=null;setView('empty');renderItems();setSidebar(true);$('grid-wrap').hidden=true;$('empty').hidden=false;$('title').textContent='Your daily plan';$('description').textContent='Choose an item on the left, or add a new item.'}
 async function refresh(){try{items=await api('pm01_items?select=*&order=created_at.asc');sortItems();selected=items.find(item=>item.id===selected)?.id||null;renderItems();if(viewMode==='all')await showAll();else if(viewMode==='dayflow')await importDayflow();else if(selected)await choose();else{showEmpty();status('Connected · All changes saved')}}catch(error){status(error.message+' · Click to retry',true)}}
 async function apiRows(path){const rows=[];for(let offset=0;;offset+=1000){const page=await api(path+'&limit=1000&offset='+offset);rows.push(...page);if(page.length<1000)return rows}}
@@ -47,8 +52,8 @@ function buildGrid(entries,readOnly=false){
   const fragment=document.createDocumentFragment();const today=todayKey();dateCells.clear();
   for(let date=new Date(Date.UTC(2026,9,1));date<=new Date(Date.UTC(2027,5,30));date.setUTCDate(date.getUTCDate()+1)){
     const iso=date.toISOString().slice(0,10);const label=iso.slice(5)+' '+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][date.getUTCDay()];
-    const row=document.createElement('tr');if(iso===today){row.className='today';row.setAttribute('aria-current','date')}
-    const day=document.createElement('td');day.className='date';
+    const row=document.createElement('tr');row.dataset.date=iso;if(iso===today){row.className='today';row.setAttribute('aria-current','date')}
+    const day=document.createElement('td');day.className='date';day.title=dateTooltip(iso);day.addEventListener('mouseenter',()=>{day.title=dateTooltip(iso)});
     const dateLabel=document.createElement('span');dateLabel.className='date-label';dateLabel.textContent=label;
     const dayLayout=document.createElement('div');dayLayout.className='date-layout';dayLayout.append(dateLabel);
     if(!readOnly&&viewMode!=='all'){const add=document.createElement('button');add.type='button';add.className='date-add';add.textContent='+';add.setAttribute('aria-label','Add item for '+label);add.title='Add item for '+label;const itemId=selected;add.onclick=()=>openDateAdd(itemId,iso,label);const slot=document.createElement('span');slot.className='date-add-slot';slot.append(add);dayLayout.append(slot)}

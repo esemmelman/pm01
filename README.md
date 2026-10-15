@@ -2,7 +2,7 @@
 
 Public daily planner: https://esemmelman.github.io/pm01/
 
-Windows-style item list with add, rename, and delete. Single selection opens a daily grid from October 1, 2026 through June 30, 2027. Click the + in a Date cell to add a named entry for that date. Multiple entries can share a date. Click an entry in Information to open its rich text editor; its name and notes save automatically to Supabase, with automatic saving and retry on failure. The current frontend version is 1.3.7.
+Windows-style item list with add, rename, and delete. Single selection opens a daily grid from October 1, 2026 through June 30, 2027. Click the + in a Date cell to add a named entry for that date. Multiple entries can share a date. Click an entry in Information to open its rich text editor; its name and notes save automatically to Supabase, with automatic saving and retry on failure. The current frontend version is 1.3.8.
 
 The app opens with no planner selected. Selecting a planner hides the item panel so the calendar uses the full width; the chevron restores the listbox. All combines the dated information from every planner and labels entries with the planner name in parentheses. Entries in All still open their rich text notes; additions use an individual planner's calendar. The Date column is 112 pixels wide.
 
@@ -20,4 +20,6 @@ Import DayFlow opens a separate, read-only calendar. DayFlow data is stored in `
 
 DayFlow import needs no sign-in. It reads the explicitly public, read-only `pm01_dayflow_calendar_export` view in DayFlow, limited to task IDs, titles, dates, and start times for October 2026–June 2027.
 
-The calendar heading shows days from today's Los Angeles date to the next upcoming item, followed by Total: with weeks and total days until the last item in the current view. For example: Next task: 14   Total: 8, 56. Weeks use one decimal when needed. Past items are excluded from Next task; empty calendars use dashes, and an entirely past calendar shows Total: 0, 0.
+The calendar heading shows days from today's Los Angeles date to the next upcoming item, followed by end with weeks and total days until the last item in the current view. For example: Next: 14 days   end: 8 weeks, 56 days. Weeks use one decimal when needed. Past items are excluded from Next; empty calendars use dashes, and an entirely past calendar shows end: 0 weeks, 0 days.
+
+Hover over a date to see its distance from today's Los Angeles date in weeks and total days, including whether it is before or after today. Task dates only, beside the calendar title, toggles between every date and dates containing tasks in the current planner, All, or DayFlow view. The filter updates when tasks are added or moved.

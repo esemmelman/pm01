@@ -19,3 +19,5 @@ main{margin-left:16px}
 .date-entry.drag-ready{cursor:grab;outline:2px solid #1767bd;outline-offset:2px;background:#edf5ff}.date-drop-target{box-shadow:inset 0 0 0 2px #1767bd!important;background:#edf5ff!important}.date-items{min-height:37px}#notes-editor a,#date-note-editor a{color:#1767bd;text-decoration:underline;cursor:pointer}
 
 .actions{flex-wrap:wrap}#multiple-note-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}#multiple-note-controls[hidden]{display:none}#multiple-note-list{min-width:140px;max-width:100%;padding:7px;font:inherit}#multiple-note-name{padding:7px;font:inherit;min-width:120px;flex:1;border:1px solid #aab5c4}
+
+.title-line{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:6px}.title-line h2{margin:0}#tasks-only{font-size:12px;padding:5px 9px}#tasks-only[aria-pressed="true"]{background:#1767bd;border-color:#1767bd;color:#fff}#grid tr[hidden]{display:none}
