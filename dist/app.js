@@ -1,7 +1,7 @@
 const URL='https://fgomaujsdblpzxhnnqrg.supabase.co/rest/v1/';
 const KEY='sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i';
 const $=id=>document.getElementById(id);
-const APP_VERSION='1.3.12';
+const APP_VERSION='1.3.13';
 let items=[],selected=null,loadVersion=0,dialogMode='add',viewMode='empty';
 let itemClickTimer;
 function cancelItemClick(){clearTimeout(itemClickTimer);itemClickTimer=null}
@@ -28,6 +28,7 @@ function updateInformationSpan(){
   label.textContent=`Next: ${next?daysUntil(next):'—'} days\u00a0\u00a0\u00a0end: ${last?totalWeeks:'—'} weeks, ${last?totalDays:'—'} days`;
   label.title=`From ${today} · Next: days until ${next||'none'} · end: weeks, days until ${last||'none'}`;
   filterTaskDates(dates);
+  if($('horizontal-calendar').open)renderHorizontalCalendar();
 }
 function hasPending(){return pending.size||notesPending.size||datePending.size||multiPending.size}
 function todayKey(now=new Date()){const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Los_Angeles',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now);const part=type=>parts.find(p=>p.type===type).value;return `${part('year')}-${part('month')}-${part('day')}`}
@@ -39,7 +40,7 @@ function sortItems(){items.sort((a,b)=>a.name.localeCompare(b.name,'en',{sensiti
 function renderItems(){sortItems();const value=selected;$('items').replaceChildren(...items.map(item=>{const option=document.createElement('option');option.value=item.id;option.textContent=item.name;return option}));$('items').value=value||'';$('open-notes').disabled=$('open-multiple-notes').disabled=$('edit').disabled=$('delete').disabled=!selected}
 function setSidebar(visible){$('item-panel').hidden=!visible;$('toggle-items').textContent=visible?'‹':'›';$('toggle-items').setAttribute('aria-expanded',String(visible));$('toggle-items').setAttribute('aria-label',visible?'Hide planner items':'Show planner items');$('toggle-items').title=visible?'Hide planner items':'Show planner items'}
 $('toggle-items').onclick=()=>setSidebar($('item-panel').hidden);
-function setView(mode){cancelItemClick();cancelDateClick();clearDateDrag();viewMode=mode;$('tasks-only').disabled=$('mondays-only').disabled=mode==='empty';$('all-items').setAttribute('aria-pressed',String(mode==='all'));$('import-dayflow').setAttribute('aria-pressed',String(mode==='dayflow'))}
+function setView(mode){cancelItemClick();cancelDateClick();clearDateDrag();viewMode=mode;$('horizontal-view').disabled=!['item','all','dayflow'].includes(mode);$('tasks-only').disabled=$('mondays-only').disabled=mode==='empty';$('all-items').setAttribute('aria-pressed',String(mode==='all'));$('import-dayflow').setAttribute('aria-pressed',String(mode==='dayflow'))}
 function showEmpty(){selected=null;setView('empty');renderItems();setSidebar(true);$('grid-wrap').hidden=true;$('empty').hidden=false;$('title').textContent='Your daily plan';$('description').textContent='Choose an item on the left, or add a new item.'}
 async function refresh(){try{items=await api('pm01_items?select=*&order=created_at.asc');sortItems();selected=items.find(item=>item.id===selected)?.id||null;renderItems();if(viewMode==='all')await showAll();else if(viewMode==='dayflow')await importDayflow();else if(selected)await choose();else{showEmpty();status('Connected · All changes saved')}}catch(error){status(error.message+' · Click to retry',true)}}
 async function apiRows(path){const rows=[];for(let offset=0;;offset+=1000){const page=await api(path+'&limit=1000&offset='+offset);rows.push(...page);if(page.length<1000)return rows}}
@@ -250,3 +251,42 @@ async function importDayflow(){if(importing)return;await flush();if(saving||hasP
 $('import-dayflow').onclick=importDayflow;
 
 refresh();
+
+// Month strips include every day, independently of the daily-grid filters.
+$('horizontal-view').onclick=()=>{renderHorizontalCalendar();$('horizontal-calendar').showModal()};
+$('horizontal-close').onclick=()=>$('horizontal-calendar').close();
+function renderHorizontalCalendar(){
+  const tasks=new Map();
+  for(const row of $('grid').querySelectorAll('tr[data-date]')){
+    const entries=[];
+    const legacy=row.querySelector('.legacy-information');
+    if(legacy?.textContent.trim())entries.push({title:legacy.textContent});
+    for(const button of row.querySelectorAll('.date-entry'))entries.push({title:button.textContent,id:button.dataset.entryId});
+    if(entries.length)tasks.set(row.dataset.date,entries);
+  }
+  const first='2026-10-01',last=[...tasks.keys()].sort().at(-1);
+  $('horizontal-title').textContent=$('title').textContent+' · Horizontal calendar';
+  $('horizontal-range').textContent=last?`Oct 2026 – ${new Intl.DateTimeFormat('en-US',{month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(last+'T00:00:00Z'))}`:'No tasks yet';
+  const container=$('horizontal-months');container.replaceChildren();
+  if(!last){const empty=document.createElement('p');empty.className='horizontal-empty';empty.textContent='Add a calendar task to see the horizontal calendar.';container.append(empty);return}
+  for(let month=new Date(first+'T00:00:00Z');month.toISOString().slice(0,7)<=last.slice(0,7);month.setUTCMonth(month.getUTCMonth()+1)){
+    const strip=document.createElement('section');strip.className='horizontal-month';
+    const heading=document.createElement('h3');heading.className='horizontal-month-name';heading.textContent=new Intl.DateTimeFormat('en-US',{month:'short',year:'numeric',timeZone:'UTC'}).format(month);strip.append(heading);
+    const days=new Date(Date.UTC(month.getUTCFullYear(),month.getUTCMonth()+1,0)).getUTCDate();let lane=2;
+    for(let day=1;day<=days;day++){
+      const date=new Date(Date.UTC(month.getUTCFullYear(),month.getUTCMonth(),day)),iso=date.toISOString().slice(0,10);
+      const cell=document.createElement('div');cell.className='horizontal-day';cell.dataset.date=iso;cell.style.gridColumn=String(day+1);cell.style.gridRow='1';cell.title=iso+' · '+dateTooltip(iso);
+      if(iso===todayKey()){cell.classList.add('horizontal-today');cell.setAttribute('aria-current','date')}
+      if([0,6].includes(date.getUTCDay()))cell.classList.add('horizontal-weekend');
+      const weekday=document.createElement('span');weekday.textContent=['S','M','T','W','T','F','S'][date.getUTCDay()];const number=document.createElement('strong');number.textContent=day;cell.append(weekday,number);strip.append(cell);
+      const entries=tasks.get(iso);if(!entries)continue;
+      cell.classList.add('horizontal-has-task');
+      const line=document.createElement('div');line.className='horizontal-connector';line.style.gridColumn=String(day+1);line.style.gridRow=`2 / ${lane+1}`;line.setAttribute('aria-hidden','true');strip.append(line);
+      const balloon=document.createElement('div');balloon.className='horizontal-balloon';balloon.dataset.date=iso;balloon.style.gridColumn=`${Math.min(day+1,28)} / span 5`;balloon.style.gridRow=String(lane++);
+      const label=document.createElement('small');label.textContent=iso;balloon.append(label);
+      for(const entry of entries){const text=document.createElement(entry.id?'button':'div');text.className='horizontal-task';text.textContent=entry.title;if(entry.id){text.type='button';text.onclick=()=>openDateNote(entry.id)}balloon.append(text)}
+      strip.append(balloon);
+    }
+    container.append(strip);
+  }
+}
