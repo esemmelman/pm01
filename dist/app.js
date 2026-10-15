@@ -1,7 +1,7 @@
 const URL='https://fgomaujsdblpzxhnnqrg.supabase.co/rest/v1/';
 const KEY='sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i';
 const $=id=>document.getElementById(id);
-const APP_VERSION='1.3.9';
+const APP_VERSION='1.3.10';
 let items=[],selected=null,loadVersion=0,dialogMode='add',viewMode='empty';
 let itemClickTimer;
 function cancelItemClick(){clearTimeout(itemClickTimer);itemClickTimer=null}
@@ -66,7 +66,8 @@ function buildGrid(entries,readOnly=false){
   }
   $('grid').replaceChildren(fragment);if(!readOnly)renderDateItems();else updateInformationSpan();
 }
-function renderDateItems(){for(const [date,list]of dateCells){list.replaceChildren(...dateItems.filter(entry=>(viewMode==='all'||entry.item_id===selected)&&entry.entry_date===date).map(entry=>{const button=document.createElement('button');button.type='button';button.className='date-entry';const name=items.find(item=>item.id===entry.item_id)?.name||'';button.textContent=entry.title+(viewMode==='all'?` (${name})`:'');button.dataset.entryId=entry.id;button.setAttribute('aria-label','Open notes for '+button.textContent);button.title='Click for notes. Double-click, then drag to another date.';
+function hasNoteContent(html){const note=document.createElement('div');note.innerHTML=cleanNotes(html||'');return Boolean(note.textContent.replace(/[\s\u200B-\u200D\uFEFF]/g,''))}
+function renderDateItems(){for(const [date,list]of dateCells){list.replaceChildren(...dateItems.filter(entry=>(viewMode==='all'||entry.item_id===selected)&&entry.entry_date===date).map(entry=>{const button=document.createElement('button');button.type='button';button.className='date-entry';const name=items.find(item=>item.id===entry.item_id)?.name||'';button.textContent=entry.title+(hasNoteContent(entry.content_html)?'*':'')+(viewMode==='all'?` (${name})`:'');button.dataset.entryId=entry.id;button.setAttribute('aria-label','Open notes for '+button.textContent);button.title='Click for notes. Double-click, then drag to another date.';
   button.onclick=event=>{cancelDateClick();if(event.detail>1||dragEntryId===entry.id)return;dateClickTimer=setTimeout(()=>{dateClickTimer=null;openDateNote(entry.id)},600)};
   button.ondblclick=event=>{event.preventDefault();cancelDateClick();clearDateDrag();dragEntryId=entry.id;button.draggable=true;button.classList.add('drag-ready');button.focus();status('Drag this item to another date · Esc to cancel')};
   button.ondragstart=event=>{if(dragEntryId!==entry.id){event.preventDefault();return}cancelDateClick();event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('text/plain',entry.id)};
