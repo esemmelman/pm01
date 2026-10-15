@@ -1,7 +1,7 @@
 const URL='https://fgomaujsdblpzxhnnqrg.supabase.co/rest/v1/';
 const KEY='sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i';
 const $=id=>document.getElementById(id);
-const APP_VERSION='1.3.5';
+const APP_VERSION='1.3.6';
 let items=[],selected=null,loadVersion=0,dialogMode='add',viewMode='empty';
 let itemClickTimer;
 function cancelItemClick(){clearTimeout(itemClickTimer);itemClickTimer=null}
@@ -15,13 +15,11 @@ const datePending=new Map(),dateCells=new Map();
 let informationDates=[];
 function updateInformationSpan(){
   const dates=[...informationDates,...(viewMode==='dayflow'?[]:dateItems.filter(entry=>(viewMode==='all'||entry.item_id===selected)&&dateCells.has(entry.entry_date)).map(entry=>entry.entry_date))].sort();
-  const label=$('information-span');label.hidden=!dates.length;
-  if(!dates.length){label.textContent='';label.title='';return}
-  const first=dates[0],last=dates[dates.length-1];
-  const days=Math.round((Date.parse(last+'T00:00:00Z')-Date.parse(first+'T00:00:00Z'))/86400000);
-  const weeks=Math.floor(days/7),remainder=days%7;
-  label.textContent=`\u00a0\u00a0\u00a0${weeks} ${weeks===1?'week':'weeks'} and ${remainder} ${remainder===1?'day':'days'}, ${days} ${days===1?'day':'days'}`;
-  label.title=`${first} to ${last}`;
+  const label=$('information-span');label.hidden=false;
+  const today=todayKey(),next=dates.find(date=>date>=today),last=dates.at(-1);
+  const weeksUntil=date=>Math.round(Math.max(0,(Date.parse(date+'T00:00:00Z')-Date.parse(today+'T00:00:00Z'))/86400000)/7*10)/10;
+  label.textContent=`Next task: ${next?weeksUntil(next):'—'}\u00a0\u00a0\u00a0Total: ${last?weeksUntil(last):'—'}`;
+  label.title=`Weeks from ${today} · Next: ${next||'none'} · Last: ${last||'none'} · Rounded to one decimal`;
 }
 function hasPending(){return pending.size||notesPending.size||datePending.size||multiPending.size}
 function todayKey(now=new Date()){const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Los_Angeles',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now);const part=type=>parts.find(p=>p.type===type).value;return `${part('year')}-${part('month')}-${part('day')}`}
