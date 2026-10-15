@@ -1,7 +1,7 @@
 const URL='https://fgomaujsdblpzxhnnqrg.supabase.co/rest/v1/';
 const KEY='sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i';
 const $=id=>document.getElementById(id);
-const APP_VERSION='1.3.3';
+const APP_VERSION='1.3.4';
 let items=[],selected=null,loadVersion=0,dialogMode='add',viewMode='empty';
 let itemClickTimer;
 function cancelItemClick(){clearTimeout(itemClickTimer);itemClickTimer=null}
@@ -12,6 +12,17 @@ let dateClickTimer,dragEntryId=null;
 function cancelDateClick(){clearTimeout(dateClickTimer);dateClickTimer=null}
 function clearDateDrag(){dragEntryId=null;document.querySelectorAll('.date-entry.drag-ready').forEach(button=>{button.draggable=false;button.classList.remove('drag-ready')});document.querySelectorAll('.date-drop-target').forEach(cell=>cell.classList.remove('date-drop-target'))}
 const datePending=new Map(),dateCells=new Map();
+let informationDates=[];
+function updateInformationSpan(){
+  const dates=[...informationDates,...(viewMode==='dayflow'?[]:dateItems.filter(entry=>(viewMode==='all'||entry.item_id===selected)&&dateCells.has(entry.entry_date)).map(entry=>entry.entry_date))].sort();
+  const label=$('information-span');label.hidden=!dates.length;
+  if(!dates.length){label.textContent='';label.title='';return}
+  const first=dates[0],last=dates[dates.length-1];
+  const days=Math.round((Date.parse(last+'T00:00:00Z')-Date.parse(first+'T00:00:00Z'))/86400000);
+  const weeks=Math.floor(days/7),remainder=days%7;
+  label.textContent=` (${weeks} ${weeks===1?'week':'weeks'}, ${remainder} ${remainder===1?'day':'days'})`;
+  label.title=`${first} to ${last}`;
+}
 function hasPending(){return pending.size||notesPending.size||datePending.size||multiPending.size}
 function todayKey(now=new Date()){const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Los_Angeles',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now);const part=type=>parts.find(p=>p.type===type).value;return `${part('year')}-${part('month')}-${part('day')}`}
 function scrollToToday(){const wrap=$('grid-wrap');const row=document.querySelector('tr.today');wrap.scrollTop=0;if(row){const header=wrap.querySelector('thead');wrap.scrollTop=Math.max(0,row.getBoundingClientRect().top-wrap.getBoundingClientRect().top-header.getBoundingClientRect().height)}}
@@ -32,6 +43,7 @@ $('all-items').onclick=showAll;
 function buildGrid(entries,readOnly=false){
   cancelDateClick();clearDateDrag();
   const values=new Map(entries.map(e=>[e.entry_date,e.content]));
+  informationDates=[...values].filter(([date,content])=>date>='2026-10-01'&&date<='2027-06-30'&&String(content||'').trim()).map(([date])=>date);
   const fragment=document.createDocumentFragment();const today=todayKey();dateCells.clear();
   for(let date=new Date(Date.UTC(2026,9,1));date<=new Date(Date.UTC(2027,5,30));date.setUTCDate(date.getUTCDate()+1)){
     const iso=date.toISOString().slice(0,10);const label=iso.slice(5)+' '+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][date.getUTCDay()];
@@ -47,13 +59,13 @@ function buildGrid(entries,readOnly=false){
     row.append(day,cell);fragment.append(row);
     if(date.getUTCDay()===0){const gap=document.createElement('tr');gap.className='spacer';gap.setAttribute('aria-hidden','true');const td=document.createElement('td');td.colSpan=2;gap.append(td);fragment.append(gap)}
   }
-  $('grid').replaceChildren(fragment);if(!readOnly)renderDateItems();
+  $('grid').replaceChildren(fragment);if(!readOnly)renderDateItems();else updateInformationSpan();
 }
 function renderDateItems(){for(const [date,list]of dateCells){list.replaceChildren(...dateItems.filter(entry=>(viewMode==='all'||entry.item_id===selected)&&entry.entry_date===date).map(entry=>{const button=document.createElement('button');button.type='button';button.className='date-entry';const name=items.find(item=>item.id===entry.item_id)?.name||'';button.textContent=entry.title+(viewMode==='all'?` (${name})`:'');button.dataset.entryId=entry.id;button.setAttribute('aria-label','Open notes for '+button.textContent);button.title='Click for notes. Double-click, then drag to another date.';
   button.onclick=event=>{cancelDateClick();if(event.detail>1||dragEntryId===entry.id)return;dateClickTimer=setTimeout(()=>{dateClickTimer=null;openDateNote(entry.id)},600)};
   button.ondblclick=event=>{event.preventDefault();cancelDateClick();clearDateDrag();dragEntryId=entry.id;button.draggable=true;button.classList.add('drag-ready');button.focus();status('Drag this item to another date · Esc to cancel')};
   button.ondragstart=event=>{if(dragEntryId!==entry.id){event.preventDefault();return}cancelDateClick();event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('text/plain',entry.id)};
-  button.ondragend=()=>{clearDateDrag();if(!hasPending())status('All changes saved')};return button}))}}
+  button.ondragend=()=>{clearDateDrag();if(!hasPending())status('All changes saved')};return button}))}updateInformationSpan()}
 function moveDateItem(id,date){
   const entry=dateItems.find(entry=>entry.id===id);if(!entry||!dateCells.has(date))return;
   clearDateDrag();if(entry.entry_date===date)return;
