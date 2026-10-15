@@ -13,3 +13,5 @@ textarea{font-weight:700}tr.today td.date{background:#fff3c4;border-bottom-color
 #item-panel[hidden]{display:none}.view-heading{display:flex;align-items:center;gap:12px;min-width:0}.sidebar-toggle{border:0;background:transparent;color:#5d6b7d;font-size:30px;line-height:32px;padding:0;width:24px;flex-shrink:0}.sidebar-toggle:hover{background:#edf1f6;color:#26364b}.save-controls{flex-wrap:wrap}.toolbar{padding-left:12px}.date-layout{font-size:13px}
 
 main{margin-left:16px}
+
+.actions{flex-wrap:wrap}#multiple-note-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}#multiple-note-controls[hidden]{display:none}#multiple-note-list{min-width:140px;max-width:100%;padding:7px;font:inherit}#multiple-note-name{padding:7px;font:inherit;min-width:120px;flex:1;border:1px solid #aab5c4}

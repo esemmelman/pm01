@@ -1,7 +1,7 @@
 const URL='https://fgomaujsdblpzxhnnqrg.supabase.co/rest/v1/';
 const KEY='sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i';
 const $=id=>document.getElementById(id);
-const APP_VERSION='1.2.2';
+const APP_VERSION='1.3.0';
 let items=[],selected=null,loadVersion=0,dialogMode='add',viewMode='empty';
 let itemClickTimer;
 function cancelItemClick(){clearTimeout(itemClickTimer);itemClickTimer=null}
@@ -9,14 +9,14 @@ function cancelItemClick(){clearTimeout(itemClickTimer);itemClickTimer=null}
 function scheduleChoose(){cancelItemClick();itemClickTimer=setTimeout(()=>{itemClickTimer=null;choose()},600)}
 let dateItems=[],activeDateItem=null,dateDraft=null,dateCreating=false;
 const datePending=new Map(),dateCells=new Map();
-function hasPending(){return pending.size||notesPending.size||datePending.size}
+function hasPending(){return pending.size||notesPending.size||datePending.size||multiPending.size}
 function todayKey(now=new Date()){const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Los_Angeles',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now);const part=type=>parts.find(p=>p.type===type).value;return `${part('year')}-${part('month')}-${part('day')}`}
 function scrollToToday(){const wrap=$('grid-wrap');const row=document.querySelector('tr.today');wrap.scrollTop=0;if(row){const header=wrap.querySelector('thead');wrap.scrollTop=Math.max(0,row.getBoundingClientRect().top-wrap.getBoundingClientRect().top-header.getBoundingClientRect().height)}}
 const pending=new Map();let saving=false,saveTimer;
 async function api(path,method='GET',body){const response=await fetch(URL+path,{method,headers:{apikey:KEY,'Content-Type':'application/json',Prefer:'return=representation,resolution=merge-duplicates'},body:body===undefined?undefined:JSON.stringify(body)});if(!response.ok){let error;try{error=await response.json()}catch{}throw new Error(error?.message||`Connection error (${response.status})`)}return response.status===204?null:response.json()}
 function status(message,error=false){$('status').textContent=`v${APP_VERSION} · ${message}`;$('status').classList.toggle('error',error)}
 function sortItems(){items.sort((a,b)=>a.name.localeCompare(b.name,'en',{sensitivity:'base'}))}
-function renderItems(){sortItems();const value=selected;$('items').replaceChildren(...items.map(item=>{const option=document.createElement('option');option.value=item.id;option.textContent=item.name;return option}));$('items').value=value||'';$('edit').disabled=$('delete').disabled=!selected}
+function renderItems(){sortItems();const value=selected;$('items').replaceChildren(...items.map(item=>{const option=document.createElement('option');option.value=item.id;option.textContent=item.name;return option}));$('items').value=value||'';$('open-notes').disabled=$('open-multiple-notes').disabled=$('edit').disabled=$('delete').disabled=!selected}
 function setSidebar(visible){$('item-panel').hidden=!visible;$('toggle-items').textContent=visible?'‹':'›';$('toggle-items').setAttribute('aria-expanded',String(visible));$('toggle-items').setAttribute('aria-label',visible?'Hide planner items':'Show planner items');$('toggle-items').title=visible?'Hide planner items':'Show planner items'}
 $('toggle-items').onclick=()=>setSidebar($('item-panel').hidden);
 function setView(mode){cancelItemClick();viewMode=mode;$('all-items').setAttribute('aria-pressed',String(mode==='all'));$('import-dayflow').setAttribute('aria-pressed',String(mode==='dayflow'))}
@@ -45,9 +45,9 @@ function buildGrid(entries,readOnly=false){
   $('grid').replaceChildren(fragment);if(!readOnly)renderDateItems();
 }
 function renderDateItems(){for(const [date,list]of dateCells){list.replaceChildren(...dateItems.filter(entry=>(viewMode==='all'||entry.item_id===selected)&&entry.entry_date===date).map(entry=>{const button=document.createElement('button');button.type='button';button.className='date-entry';const name=items.find(item=>item.id===entry.item_id)?.name||'';button.textContent=entry.title+(viewMode==='all'?` (${name})`:'');button.dataset.entryId=entry.id;button.setAttribute('aria-label','Open notes for '+button.textContent);button.onclick=()=>openDateNote(entry.id);return button}))}}
-async function choose(){dismissNotes();selected=$('items').value||null;$('edit').disabled=$('delete').disabled=!selected;const version=++loadVersion;$('grid-wrap').hidden=true;$('empty').hidden=!!selected;if(!selected){showEmpty();return}setView('item');setSidebar(false);const item=items.find(i=>i.id===selected);$('title').textContent=item.name;$('description').textContent='October 1, 2026 – June 30, 2027 · Click + to add a dated item; click an item for notes';status('Loading…');try{const [entries,dated]=await Promise.all([api('pm01_entries?select=*&item_id=eq.'+selected),api('pm01_date_items?select=*&item_id=eq.'+selected+'&order=created_at.asc,id.asc')]);if(version!==loadVersion)return;dateItems=dated.map(entry=>({...entry,...datePending.get(entry.id)}));for(const entry of pending.values())if(entry.item_id===selected){const old=entries.find(e=>e.entry_date===entry.entry_date);if(old)old.content=entry.content;else entries.push(entry)}buildGrid(entries);$('grid-wrap').hidden=false;scrollToToday();status(hasPending()?'Unsaved changes…':'All changes saved')}catch(error){if(version===loadVersion)status(error.message+' · Click to retry',true)}}
+async function choose(){dismissNotes();selected=$('items').value||null;$('open-notes').disabled=$('open-multiple-notes').disabled=$('edit').disabled=$('delete').disabled=!selected;const version=++loadVersion;$('grid-wrap').hidden=true;$('empty').hidden=!!selected;if(!selected){showEmpty();return}setView('item');setSidebar(false);const item=items.find(i=>i.id===selected);$('title').textContent=item.name;$('description').textContent='October 1, 2026 – June 30, 2027 · Click + to add a dated item; click an item for notes';status('Loading…');try{const [entries,dated]=await Promise.all([api('pm01_entries?select=*&item_id=eq.'+selected),api('pm01_date_items?select=*&item_id=eq.'+selected+'&order=created_at.asc,id.asc')]);if(version!==loadVersion)return;dateItems=dated.map(entry=>({...entry,...datePending.get(entry.id)}));for(const entry of pending.values())if(entry.item_id===selected){const old=entries.find(e=>e.entry_date===entry.entry_date);if(old)old.content=entry.content;else entries.push(entry)}buildGrid(entries);$('grid-wrap').hidden=false;scrollToToday();status(hasPending()?'Unsaved changes…':'All changes saved')}catch(error){if(version===loadVersion)status(error.message+' · Click to retry',true)}}
 function queue(item_id,entry_date,content){pending.set(item_id+':'+entry_date,{item_id,entry_date,content});status('Unsaved changes…');clearTimeout(saveTimer);saveTimer=setTimeout(flush,500)}
-async function flush(){clearTimeout(saveTimer);if(saving||!hasPending())return;saving=true;const batch=[...pending.entries()];status('Saving…');try{if(batch.length)await api('pm01_entries?on_conflict=item_id,entry_date','POST',batch.map(([,entry])=>entry));await saveNotes();await saveDateNotes();for(const [key,entry]of batch)if(pending.get(key)===entry)pending.delete(key);status(hasPending()?'Saving…':'All changes saved')}catch(error){status('Save failed: '+error.message+' · Click to retry',true);if(notesPending.size)noteStatus('Save failed · Click Retry save',true);if(datePending.size)dateNoteStatus('Save failed · Click Retry save',true)}finally{saving=false;if(hasPending()&&!$('status').classList.contains('error'))saveTimer=setTimeout(flush,100)}}
+async function flush(){clearTimeout(saveTimer);if(saving||!hasPending())return;saving=true;const batch=[...pending.entries()];status('Saving…');try{if(batch.length)await api('pm01_entries?on_conflict=item_id,entry_date','POST',batch.map(([,entry])=>entry));await saveNotes();await saveMultipleNotes();await saveDateNotes();for(const [key,entry]of batch)if(pending.get(key)===entry)pending.delete(key);status(hasPending()?'Saving…':'All changes saved')}catch(error){status('Save failed: '+error.message+' · Click to retry',true);if(notesPending.size||multiPending.size)noteStatus('Save failed · Click Retry save',true);if(datePending.size)dateNoteStatus('Save failed · Click Retry save',true)}finally{saving=false;if(hasPending()&&!$('status').classList.contains('error'))saveTimer=setTimeout(flush,100)}}
 function openDialog(mode){dialogMode=mode;$('dialog-title').textContent=mode==='add'?'Add item':'Edit item';$('name').value=mode==='edit'?items.find(i=>i.id===selected).name:'';$('dialog-error').textContent='';$('dialog').showModal();$('name').focus()}
 $('add').onclick=$('first-add').onclick=()=>openDialog('add');$('edit').onclick=()=>openDialog('edit');$('cancel').onclick=()=>$('dialog').close();
 $('item-form').onsubmit=async event=>{event.preventDefault();const name=$('name').value.trim();if(!name){$('dialog-error').textContent='Enter an item name.';return}$('confirm').disabled=true;try{if(dialogMode==='add'){const [item]=await api('pm01_items','POST',{name});items.push(item);selected=item.id}else{await api('pm01_items?id=eq.'+selected,'PATCH',{name});items.find(i=>i.id===selected).name=name}renderItems();$('dialog').close();await choose()}catch(error){$('dialog-error').textContent=error.message}finally{$('confirm').disabled=false}};
@@ -57,22 +57,98 @@ $('items').addEventListener('click',event=>{if(event.detail===1)scheduleChoose()
 $('status').onclick=()=>{if(hasPending())flush();else if(viewMode==='all')showAll();else if(viewMode==='dayflow')importDayflow();else if(selected)choose();else refresh()};
 window.addEventListener('beforeunload',event=>{if(hasPending()||saving||dateCreating){event.preventDefault();event.returnValue=''}});document.addEventListener('visibilitychange',()=>{if(document.hidden)flush()});window.addEventListener('online',()=>hasPending()?flush():refresh());
 // Persist rich item notes separately from the daily grid.
-const notesPending=new Map();let noteItem=null,noteVersion=0;
+const notesPending=new Map(),multiPending=new Map();let noteItem=null,noteVersion=0,multipleMode=false,multipleNotes=[],activeNote=null,multipleBusy=false,multipleLoading=false;
 const notesPane=document.createElement('section');notesPane.id='notes-pane';notesPane.hidden=true;
 notesPane.innerHTML='<div class="notes-heading"><h3 id="notes-title">Item notes</h3><button type="button" id="notes-close" aria-label="Close notes">Close</button></div><div id="notes-toolbar" role="toolbar" aria-label="Text formatting"><button type="button" data-command="dateStamp" title="Insert current date and time">Date stamp</button><button type="button" data-command="bold" title="Bold"><b>B</b></button><button type="button" data-command="italic" title="Italic"><i>I</i></button><button type="button" data-command="underline" title="Underline"><u>U</u></button><button type="button" data-command="insertUnorderedList" title="Bulleted list">• List</button><button type="button" data-command="insertOrderedList" title="Numbered list">1. List</button><button type="button" data-command="formatBlock" data-value="h2">Heading</button><button type="button" data-command="formatBlock" data-value="p">Paragraph</button><button type="button" data-command="removeFormat">Clear format</button><button type="button" data-command="undo" title="Undo">↶</button><button type="button" data-command="redo" title="Redo">↷</button></div><div id="notes-editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Rich text item notes"></div><div class="notes-footer"><span id="notes-status" role="status" aria-live="polite">Loading…</span><button type="button" id="notes-retry" hidden>Retry save</button></div>';
 $('grid-wrap').after(notesPane);
-function dismissNotes(){++noteVersion;notesPane.hidden=true;noteItem=null;flush()}
+const noteControls=document.createElement('div');noteControls.id='multiple-note-controls';noteControls.hidden=true;
+noteControls.innerHTML='<label for="multiple-note-list">Choose a note</label><select id="multiple-note-list" aria-label="Notes"></select><button type="button" id="multiple-note-add">＋ Add note</button><button type="button" id="multiple-note-delete">Delete note</button><label for="multiple-note-name">Note name</label><input id="multiple-note-name" maxlength="200" autocomplete="off">';
+$('notes-toolbar').before(noteControls);
+$('open-notes').onclick=()=>openNotes();$('open-multiple-notes').onclick=()=>openNotes(true);
+
+function dismissNotes(){++noteVersion;multipleMode=false;notesPane.hidden=true;noteItem=null;flush()}
 function cleanNotes(html){const source=document.createElement('template');source.innerHTML=html;const allowed=new Set(['P','BR','DIV','B','STRONG','I','EM','U','UL','OL','LI','H2','H3','BLOCKQUOTE']);function copy(node){if(node.nodeType===3)return document.createTextNode(node.textContent);const out=document.createDocumentFragment();if(node.nodeType!==1)return out;if(['SCRIPT','STYLE','IFRAME','OBJECT','SVG','MATH'].includes(node.tagName))return out;const target=allowed.has(node.tagName)?document.createElement(node.tagName.toLowerCase()):out;for(const child of node.childNodes)target.append(copy(child));return target}const holder=document.createElement('div');for(const child of source.content.childNodes)holder.append(copy(child));return holder.innerHTML}
 function noteStatus(message,error=false){$('notes-status').textContent=message;$('notes-status').classList.toggle('error',error);$('notes-retry').hidden=!error}
-async function openNotes(){const id=$('items').value;if(!id)return;selected=id;setView('notes');setSidebar(false);++loadVersion;$('grid-wrap').hidden=true;$('empty').hidden=true;const version=++noteVersion;noteItem=id;$('title').textContent=items.find(item=>item.id===id)?.name||'Item notes';$('description').textContent='Rich text notes · Changes save automatically';$('notes-title').textContent=items.find(item=>item.id===id)?.name+' — Notes';$('notes-editor').innerHTML='';$('notes-editor').contentEditable='false';noteStatus('Loading…');notesPane.hidden=false;try{const rows=await api('pm01_item_notes?item_id=eq.'+id);if(version!==noteVersion||notesPane.hidden)return;$('notes-editor').innerHTML=cleanNotes(notesPending.get(id)?.content_html??rows[0]?.content_html??'');$('notes-editor').contentEditable='true';noteStatus(notesPending.has(id)?'Unsaved changes…':'All changes saved');$('notes-editor').focus()}catch(error){noteStatus('Load failed: '+error.message,true)}}
-function queueNote(){if(!noteItem)return;notesPending.set(noteItem,{item_id:noteItem,content_html:cleanNotes($('notes-editor').innerHTML)});noteStatus('Unsaved changes…');status('Unsaved changes…');clearTimeout(saveTimer);saveTimer=setTimeout(flush,500)}
+async function openNotes(multiple=false){
+  const id=$('items').value;if(!id)return;
+  multipleMode=multiple;multipleLoading=multiple;activeNote=null;
+  if(multiple){multipleNotes=[];renderMultipleNotes()}
+  $('multiple-note-controls').hidden=!multiple;selected=id;setView('notes');setSidebar(false);++loadVersion;
+  $('grid-wrap').hidden=true;$('empty').hidden=true;const version=++noteVersion;noteItem=id;
+  $('title').textContent=items.find(item=>item.id===id)?.name||'Item notes';
+  $('description').textContent='Rich text notes · Changes save automatically';
+  $('notes-title').textContent=items.find(item=>item.id===id)?.name+(multiple?' — Multiple Notes':' — Notes');
+  $('notes-editor').innerHTML='';$('notes-editor').contentEditable='false';noteStatus('Loading…');notesPane.hidden=false;
+  try{
+    if(multiple){
+      const rows=await apiRows('pm01_multiple_notes?item_id=eq.'+id+'&order=created_at.asc,id.asc');
+      if(version!==noteVersion||notesPane.hidden)return;
+      multipleNotes=rows.map(note=>({...note,...multiPending.get(note.id)}));multipleLoading=false;
+      selectMultipleNote(multipleNotes[0]?.id);return;
+    }
+    const rows=await api('pm01_item_notes?item_id=eq.'+id);
+    if(version!==noteVersion||notesPane.hidden)return;
+    $('notes-editor').innerHTML=cleanNotes(notesPending.get(id)?.content_html??rows[0]?.content_html??'');
+    $('notes-editor').contentEditable='true';noteStatus(notesPending.has(id)?'Unsaved changes…':'All changes saved');$('notes-editor').focus();
+  }catch(error){if(version===noteVersion)noteStatus('Load failed: '+error.message,true)}
+}
+function queueNote(){if(!noteItem)return;if(multipleMode){queueMultipleNote();return}notesPending.set(noteItem,{item_id:noteItem,content_html:cleanNotes($('notes-editor').innerHTML)});noteStatus('Unsaved changes…');status('Unsaved changes…');clearTimeout(saveTimer);saveTimer=setTimeout(flush,500)}
 async function saveNotes(){const batch=[...notesPending.entries()];if(!batch.length)return;noteStatus('Saving…');await api('pm01_item_notes?on_conflict=item_id','POST',batch.map(([,entry])=>entry));for(const [id,entry]of batch)if(notesPending.get(id)===entry)notesPending.delete(id);noteStatus(notesPending.size?'Unsaved changes…':'All changes saved')}
 $('notes-editor').addEventListener('input',queueNote);$('notes-editor').addEventListener('blur',flush);
 $('notes-toolbar').addEventListener('mousedown',event=>{if(event.target.closest('button'))event.preventDefault()});
 $('notes-toolbar').addEventListener('click',event=>{const button=event.target.closest('button');if(!button||$('notes-editor').contentEditable!=='true')return;$('notes-editor').focus();if(button.dataset.command==='dateStamp')document.execCommand('insertText',false,dateStamp());else document.execCommand(button.dataset.command,false,button.dataset.value||null);queueNote()});
 $('notes-close').textContent='Daily grid';$('notes-close').setAttribute('aria-label','Show daily grid');$('notes-close').onclick=choose;
-$('notes-retry').onclick=()=>notesPending.size?flush():openNotes();$('items').addEventListener('dblclick',()=>{cancelItemClick();openNotes()});
+$('notes-retry').onclick=()=>notesPending.size||multiPending.size?flush():openNotes(multipleMode);$('items').addEventListener('dblclick',()=>{cancelItemClick();openNotes()});
 $('items').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();openNotes()}});
+
+// Named rich text notes share the existing editor and save lifecycle.
+function renderMultipleNotes(){
+  $('multiple-note-list').replaceChildren(...multipleNotes.map(note=>{const option=document.createElement('option');option.value=note.id;option.textContent=note.title;return option}));
+  $('multiple-note-list').value=activeNote||'';
+  const busy=multipleBusy||multipleLoading;
+  $('multiple-note-add').disabled=busy;
+  $('multiple-note-list').disabled=busy;
+  if(multipleMode)$('notes-editor').contentEditable=activeNote&&!busy?'true':'false';
+  $('multiple-note-delete').disabled=busy||!activeNote;
+  $('multiple-note-name').disabled=busy||!activeNote;
+}
+function selectMultipleNote(id){
+  const note=multipleNotes.find(note=>note.id===id);activeNote=note?.id||null;renderMultipleNotes();
+  $('multiple-note-name').value=note?.title||'';
+  $('notes-editor').innerHTML=cleanNotes(note?.content_html||'');
+  noteStatus(note?(multiPending.has(note.id)?'Unsaved changes…':'All changes saved'):'Click Add note to create your first note.');
+}
+function queueMultipleNote(){
+  const note=multipleNotes.find(note=>note.id===activeNote);if(!note)return;
+  note.title=$('multiple-note-name').value.trim()||'Untitled note';note.content_html=cleanNotes($('notes-editor').innerHTML);
+  multiPending.set(note.id,{title:note.title,content_html:note.content_html});renderMultipleNotes();
+  noteStatus('Unsaved changes…');status('Unsaved changes…');clearTimeout(saveTimer);saveTimer=setTimeout(flush,500);
+}
+async function saveMultipleNotes(){
+  const batch=[...multiPending.entries()];if(!batch.length)return;
+  if(multipleMode)noteStatus('Saving…');
+  for(const [id,entry]of batch){await api('pm01_multiple_notes?id=eq.'+id,'PATCH',entry);if(multiPending.get(id)===entry)multiPending.delete(id)}
+  if(multipleMode)noteStatus(multiPending.has(activeNote)?'Unsaved changes…':'All changes saved');
+}
+$('multiple-note-list').onchange=()=>selectMultipleNote($('multiple-note-list').value);
+$('multiple-note-name').addEventListener('input',queueMultipleNote);
+$('multiple-note-name').addEventListener('blur',flush);
+$('multiple-note-add').onclick=async()=>{
+  if(!noteItem||!multipleMode||multipleBusy||multipleLoading)return;const itemId=noteItem,version=noteVersion;multipleBusy=true;renderMultipleNotes();
+  try{const [note]=await api('pm01_multiple_notes','POST',{item_id:itemId,title:'New note',content_html:''});
+    if(version!==noteVersion)return;multipleBusy=false;multipleNotes.push(note);selectMultipleNote(note.id);$('multiple-note-name').focus();$('multiple-note-name').select();
+  }catch(error){if(version===noteVersion)noteStatus('Could not add note: '+error.message,true)}
+  finally{multipleBusy=false;renderMultipleNotes()}
+};
+$('multiple-note-delete').onclick=async()=>{
+  const note=multipleNotes.find(note=>note.id===activeNote);if(!note||multipleBusy||!confirm('Delete “'+note.title+'”?'))return;
+  const version=noteVersion;multipleBusy=true;renderMultipleNotes();
+  try{await flush();if(saving||multiPending.has(note.id))throw new Error('Wait for changes to save, then try again.');
+    await api('pm01_multiple_notes?id=eq.'+note.id,'DELETE');
+    if(version!==noteVersion)return;multipleNotes=multipleNotes.filter(row=>row.id!==note.id);selectMultipleNote(multipleNotes[0]?.id);
+  }catch(error){if(version===noteVersion)noteStatus('Could not delete note: '+error.message,true)}
+  finally{multipleBusy=false;renderMultipleNotes()}
+};
 
 // Each dated item has its own automatically saved rich text notes.
 function openDateAdd(itemId,date,label){if(dateCreating)return;dateDraft={itemId,date};$('date-add-heading').textContent='Add item · '+label;$('date-name').value='';$('date-add-error').textContent='';$('date-add-dialog').showModal();$('date-name').focus()}
