@@ -1,7 +1,7 @@
 const URL='https://fgomaujsdblpzxhnnqrg.supabase.co/rest/v1/';
 const KEY='sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i';
 const $=id=>document.getElementById(id);
-const APP_VERSION='1.3.2';
+const APP_VERSION='1.3.3';
 let items=[],selected=null,loadVersion=0,dialogMode='add',viewMode='empty';
 let itemClickTimer;
 function cancelItemClick(){clearTimeout(itemClickTimer);itemClickTimer=null}
@@ -118,11 +118,16 @@ function formatNotes(editor,button,queue){
   if(button.dataset.command==='createLink'){
     const selection=window.getSelection();const range=selection.rangeCount?selection.getRangeAt(0).cloneRange():null;
     if(!range||!editor.contains(range.commonAncestorContainer))return;
-    const entered=window.prompt('Link address (https://, http://, mailto:, or tel:)', 'https://');if(entered===null)return;
+    const parent=range.startContainer.nodeType===1?range.startContainer:range.startContainer.parentElement;
+    const existing=parent?.closest('a');
+    if(range.collapsed&&existing&&editor.contains(existing))range.selectNode(existing);
+    const entered=window.prompt('Link address (https://, http://, mailto:, or tel:)',existing?.getAttribute('href')||'https://');if(entered===null)return;
     const href=safeLink(entered.trim());if(!href){window.alert('Enter a valid web, email, or phone link.');return}
+    const name=window.prompt('Friendly link name',range.toString()||href);if(name===null)return;
     editor.focus();selection.removeAllRanges();selection.addRange(range);
-    if(range.collapsed){const link=document.createElement('a');link.href=href;link.textContent=href;link.target='_blank';link.rel='noopener noreferrer';document.execCommand('insertHTML',false,link.outerHTML)}
-    else document.execCommand('createLink',false,href);
+    const label=name.trim()||href;
+    if(!range.collapsed&&label===range.toString())document.execCommand('createLink',false,href);
+    else{const link=document.createElement('a');link.href=href;link.textContent=label;link.target='_blank';link.rel='noopener noreferrer';document.execCommand('insertHTML',false,link.outerHTML)}
   }else if(button.dataset.command==='dateStamp')document.execCommand('insertText',false,dateStamp());
   else document.execCommand(button.dataset.command,false,button.dataset.value||null);
   queue();
