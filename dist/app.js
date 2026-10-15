@@ -1,7 +1,7 @@
 const URL='https://fgomaujsdblpzxhnnqrg.supabase.co/rest/v1/';
 const KEY='sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i';
 const $=id=>document.getElementById(id);
-const APP_VERSION='1.3.14';
+const APP_VERSION='1.3.15';
 let items=[],selected=null,loadVersion=0,dialogMode='add',viewMode='empty';
 let itemClickTimer;
 function cancelItemClick(){clearTimeout(itemClickTimer);itemClickTimer=null}
@@ -265,7 +265,7 @@ function renderHorizontalCalendar(){
     if(entries.length)tasks.set(row.dataset.date,entries);
   }
   const first='2026-10-01',last=[...tasks.keys()].sort().at(-1);
-  $('horizontal-title').textContent=$('title').textContent+' · Horizontal calendar';
+  $('horizontal-title').textContent=$('title').textContent+' · Long Calendar';
   $('horizontal-range').textContent=last?`Oct 2026 – ${new Intl.DateTimeFormat('en-US',{month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(last+'T00:00:00Z'))}`:'No tasks yet';
   const container=$('horizontal-months');container.replaceChildren();
   if(!last){const empty=document.createElement('p');empty.className='horizontal-empty';empty.textContent='Add a calendar task to see the horizontal calendar.';container.append(empty);return}
@@ -276,7 +276,8 @@ function renderHorizontalCalendar(){
     const taskLayer=document.createElement('div');taskLayer.className='horizontal-task-layer';
     for(let day=1;day<=days;day++){
       const date=new Date(Date.UTC(month.getUTCFullYear(),month.getUTCMonth(),day)),iso=date.toISOString().slice(0,10);
-      const cell=document.createElement('div');cell.className='horizontal-day';cell.dataset.date=iso;cell.style.gridColumn=String(day+1);cell.style.gridRow='1';cell.title=iso+' · '+dateTooltip(iso);
+      const cell=document.createElement('div');cell.className='horizontal-day';cell.dataset.date=iso;cell.style.gridColumn=String(day+1);cell.style.gridRow='1';const offset=Math.round((Date.parse(iso+'T00:00:00Z')-Date.parse(last+'T00:00:00Z'))/86400000);
+      cell.title=`${iso} · ${Math.round(Math.abs(offset)/7*10)/10} weeks, ${Math.abs(offset)} days ${offset<0?'before':offset>0?'after':'from'} last task date (${last})`;
       if(iso===todayKey()){cell.classList.add('horizontal-today');cell.setAttribute('aria-current','date')}
       if([0,6].includes(date.getUTCDay()))cell.classList.add('horizontal-weekend');
       const weekday=document.createElement('span');weekday.textContent=['S','M','T','W','T','F','S'][date.getUTCDay()];const number=document.createElement('strong');number.textContent=day;cell.append(weekday,number);strip.append(cell);
