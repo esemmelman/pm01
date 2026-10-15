@@ -1,7 +1,7 @@
 const URL='https://fgomaujsdblpzxhnnqrg.supabase.co/rest/v1/';
 const KEY='sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i';
 const $=id=>document.getElementById(id);
-const APP_VERSION='1.3.13';
+const APP_VERSION='1.3.14';
 let items=[],selected=null,loadVersion=0,dialogMode='add',viewMode='empty';
 let itemClickTimer;
 function cancelItemClick(){clearTimeout(itemClickTimer);itemClickTimer=null}
@@ -253,7 +253,7 @@ $('import-dayflow').onclick=importDayflow;
 refresh();
 
 // Month strips include every day, independently of the daily-grid filters.
-$('horizontal-view').onclick=()=>{renderHorizontalCalendar();$('horizontal-calendar').showModal()};
+$('horizontal-view').onclick=()=>{$('horizontal-calendar').showModal();renderHorizontalCalendar()};
 $('horizontal-close').onclick=()=>$('horizontal-calendar').close();
 function renderHorizontalCalendar(){
   const tasks=new Map();
@@ -272,7 +272,8 @@ function renderHorizontalCalendar(){
   for(let month=new Date(first+'T00:00:00Z');month.toISOString().slice(0,7)<=last.slice(0,7);month.setUTCMonth(month.getUTCMonth()+1)){
     const strip=document.createElement('section');strip.className='horizontal-month';
     const heading=document.createElement('h3');heading.className='horizontal-month-name';heading.textContent=new Intl.DateTimeFormat('en-US',{month:'short',year:'numeric',timeZone:'UTC'}).format(month);strip.append(heading);
-    const days=new Date(Date.UTC(month.getUTCFullYear(),month.getUTCMonth()+1,0)).getUTCDate();let lane=2;
+    const days=new Date(Date.UTC(month.getUTCFullYear(),month.getUTCMonth()+1,0)).getUTCDate();
+    const taskLayer=document.createElement('div');taskLayer.className='horizontal-task-layer';
     for(let day=1;day<=days;day++){
       const date=new Date(Date.UTC(month.getUTCFullYear(),month.getUTCMonth(),day)),iso=date.toISOString().slice(0,10);
       const cell=document.createElement('div');cell.className='horizontal-day';cell.dataset.date=iso;cell.style.gridColumn=String(day+1);cell.style.gridRow='1';cell.title=iso+' · '+dateTooltip(iso);
@@ -281,12 +282,32 @@ function renderHorizontalCalendar(){
       const weekday=document.createElement('span');weekday.textContent=['S','M','T','W','T','F','S'][date.getUTCDay()];const number=document.createElement('strong');number.textContent=day;cell.append(weekday,number);strip.append(cell);
       const entries=tasks.get(iso);if(!entries)continue;
       cell.classList.add('horizontal-has-task');
-      const line=document.createElement('div');line.className='horizontal-connector';line.style.gridColumn=String(day+1);line.style.gridRow=`2 / ${lane+1}`;line.setAttribute('aria-hidden','true');strip.append(line);
-      const balloon=document.createElement('div');balloon.className='horizontal-balloon';balloon.dataset.date=iso;balloon.style.gridColumn=`${Math.min(day+1,28)} / span 5`;balloon.style.gridRow=String(lane++);
+      const line=document.createElement('div');line.className='horizontal-connector';line.dataset.date=iso;line.setAttribute('aria-hidden','true');taskLayer.append(line);
+      const balloon=document.createElement('div');balloon.className='horizontal-balloon';balloon.dataset.date=iso;
       const label=document.createElement('small');label.textContent=iso;balloon.append(label);
       for(const entry of entries){const text=document.createElement(entry.id?'button':'div');text.className='horizontal-task';text.textContent=entry.title;if(entry.id){text.type='button';text.onclick=()=>openDateNote(entry.id)}balloon.append(text)}
-      strip.append(balloon);
+      taskLayer.append(balloon);
     }
+    if(taskLayer.children.length)strip.append(taskLayer);
     container.append(strip);
   }
+  layoutHorizontalBalloons();
 }
+
+function layoutHorizontalBalloons(){
+  for(const strip of $('horizontal-months').querySelectorAll('.horizontal-month')){
+    const layer=strip.querySelector('.horizontal-task-layer');if(!layer)continue;
+    const origin=layer.getBoundingClientRect(),placed=[];let bottom=0;
+    for(const balloon of layer.querySelectorAll('.horizontal-balloon')){
+      const day=strip.querySelector(`.horizontal-day[data-date="${balloon.dataset.date}"]`).getBoundingClientRect();
+      const anchor=day.left+day.width/2-origin.left,width=balloon.offsetWidth,height=balloon.offsetHeight;
+      const left=Math.max(0,Math.min(anchor-12,origin.width-width));let top=18;
+      let collision;while((collision=placed.find(other=>left<other.right+10&&left+width+10>other.left&&top<other.bottom+10&&top+height+10>other.top)))top=collision.bottom+10;
+      balloon.style.left=left+'px';balloon.style.top=top+'px';
+      const line=layer.querySelector(`.horizontal-connector[data-date="${balloon.dataset.date}"]`);line.style.left=anchor+'px';line.style.height=top+'px';
+      placed.push({left,right:left+width,top,bottom:top+height});bottom=Math.max(bottom,top+height);
+    }
+    layer.style.height=bottom+'px';
+  }
+}
+window.addEventListener('resize',()=>{if($('horizontal-calendar').open)layoutHorizontalBalloons()});
