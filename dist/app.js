@@ -1,7 +1,7 @@
 const URL='https://fgomaujsdblpzxhnnqrg.supabase.co/rest/v1/';
 const KEY='sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i';
 const $=id=>document.getElementById(id);
-const APP_VERSION='1.3.18';
+const APP_VERSION='1.3.19';
 let items=[],selected=null,loadVersion=0,dialogMode='add',viewMode='empty';
 let itemClickTimer;
 function cancelItemClick(){clearTimeout(itemClickTimer);itemClickTimer=null}
@@ -288,7 +288,6 @@ function renderHorizontalCalendar(){
       cell.classList.add('horizontal-has-task');
       const line=document.createElement('div');line.className='horizontal-connector';line.dataset.date=iso;line.setAttribute('aria-hidden','true');taskLayer.append(line);
       const balloon=document.createElement('div');balloon.className='horizontal-balloon';balloon.dataset.date=iso;
-      const label=document.createElement('small');label.textContent=iso;balloon.append(label);
       for(const entry of entries){const text=document.createElement(entry.id?'button':'div');text.className='horizontal-task';text.textContent=entry.title;if(entry.id){text.type='button';text.onclick=()=>openDateNote(entry.id)}balloon.append(text)}
       taskLayer.append(balloon);
     }
