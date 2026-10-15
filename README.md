@@ -2,7 +2,7 @@
 
 Public daily planner: https://esemmelman.github.io/pm01/
 
-Windows-style item list with add, rename, and delete. Single selection opens a daily grid from October 1, 2026 through December 31, 2027. Click the + in a Date cell to add a named entry for that date. Multiple entries can share a date. Click an entry in Information to open its rich text editor; its name and notes save automatically to Supabase, with automatic saving and retry on failure. The current frontend version is 1.3.10.
+Windows-style item list with add, rename, and delete. Single selection opens a daily grid from October 1, 2026 through December 31, 2027. Click the + in a Date cell to add a named entry for that date. Multiple entries can share a date. Click an entry in Information to open its rich text editor; its name and notes save automatically to Supabase, with automatic saving and retry on failure. The current frontend version is 1.3.11.
 
 The app opens with no planner selected. Selecting a planner hides the item panel so the calendar uses the full width; the chevron restores the listbox. All combines the dated information from every planner and labels entries with the planner name in parentheses. Entries in All still open their rich text notes; additions use an individual planner's calendar. The Date column is 112 pixels wide.
 
@@ -25,3 +25,5 @@ The calendar heading shows days from today's Los Angeles date to the next upcomi
 Hover over a date to see its distance from today's Los Angeles date in weeks and total days, including whether it is before or after today. Task dates only, beside the calendar title, toggles between every date and dates containing tasks in the current planner, All, or DayFlow view. The filter updates when tasks are added or moved.
 
 Calendar items with nonempty notes show an asterisk immediately after the item name (for example, `Meeting*`). The marker updates while editing, disappears when the notes are cleared, and appears in both individual calendars and All. Empty formatting and whitespace do not count as note content.
+
+Mondays only, immediately after Task dates only, toggles the calendar to Monday dates. Turn on both filters to show only Mondays that have tasks. Both filters apply in individual calendars, All, and DayFlow.

@@ -1,7 +1,7 @@
 const URL='https://fgomaujsdblpzxhnnqrg.supabase.co/rest/v1/';
 const KEY='sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i';
 const $=id=>document.getElementById(id);
-const APP_VERSION='1.3.10';
+const APP_VERSION='1.3.11';
 let items=[],selected=null,loadVersion=0,dialogMode='add',viewMode='empty';
 let itemClickTimer;
 function cancelItemClick(){clearTimeout(itemClickTimer);itemClickTimer=null}
@@ -12,10 +12,11 @@ let dateClickTimer,dragEntryId=null;
 function cancelDateClick(){clearTimeout(dateClickTimer);dateClickTimer=null}
 function clearDateDrag(){dragEntryId=null;document.querySelectorAll('.date-entry.drag-ready').forEach(button=>{button.draggable=false;button.classList.remove('drag-ready')});document.querySelectorAll('.date-drop-target').forEach(cell=>cell.classList.remove('date-drop-target'))}
 const datePending=new Map(),dateCells=new Map();
-let informationDates=[],tasksOnly=false;
+let informationDates=[],tasksOnly=false,mondaysOnly=false;
 function dateDistance(date){return Math.round((Date.parse(date+'T00:00:00Z')-Date.parse(todayKey()+'T00:00:00Z'))/86400000)}
 function dateTooltip(date){const days=dateDistance(date),weeks=Math.round(Math.abs(days)/7*10)/10;return `${weeks} weeks, ${Math.abs(days)} days ${days<0?'before':'from'} today`}
-function filterTaskDates(dates){const occupied=new Set(dates);for(const row of $('grid').querySelectorAll('tr'))row.hidden=tasksOnly&&(!row.dataset.date||!occupied.has(row.dataset.date))}
+function filterTaskDates(dates){const occupied=new Set(dates);for(const row of $('grid').querySelectorAll('tr'))row.hidden=(tasksOnly&&(!row.dataset.date||!occupied.has(row.dataset.date)))||(mondaysOnly&&(!row.dataset.date||new Date(row.dataset.date+'T00:00:00Z').getUTCDay()!==1))}
+$('mondays-only').onclick=()=>{mondaysOnly=!mondaysOnly;$('mondays-only').setAttribute('aria-pressed',String(mondaysOnly));updateInformationSpan()};
 $('tasks-only').onclick=()=>{tasksOnly=!tasksOnly;$('tasks-only').setAttribute('aria-pressed',String(tasksOnly));updateInformationSpan()};
 function updateInformationSpan(){
   const dates=[...informationDates,...(viewMode==='dayflow'?[]:dateItems.filter(entry=>(viewMode==='all'||entry.item_id===selected)&&dateCells.has(entry.entry_date)).map(entry=>entry.entry_date))].sort();
@@ -38,7 +39,7 @@ function sortItems(){items.sort((a,b)=>a.name.localeCompare(b.name,'en',{sensiti
 function renderItems(){sortItems();const value=selected;$('items').replaceChildren(...items.map(item=>{const option=document.createElement('option');option.value=item.id;option.textContent=item.name;return option}));$('items').value=value||'';$('open-notes').disabled=$('open-multiple-notes').disabled=$('edit').disabled=$('delete').disabled=!selected}
 function setSidebar(visible){$('item-panel').hidden=!visible;$('toggle-items').textContent=visible?'‹':'›';$('toggle-items').setAttribute('aria-expanded',String(visible));$('toggle-items').setAttribute('aria-label',visible?'Hide planner items':'Show planner items');$('toggle-items').title=visible?'Hide planner items':'Show planner items'}
 $('toggle-items').onclick=()=>setSidebar($('item-panel').hidden);
-function setView(mode){cancelItemClick();cancelDateClick();clearDateDrag();viewMode=mode;$('tasks-only').disabled=mode==='empty';$('all-items').setAttribute('aria-pressed',String(mode==='all'));$('import-dayflow').setAttribute('aria-pressed',String(mode==='dayflow'))}
+function setView(mode){cancelItemClick();cancelDateClick();clearDateDrag();viewMode=mode;$('tasks-only').disabled=$('mondays-only').disabled=mode==='empty';$('all-items').setAttribute('aria-pressed',String(mode==='all'));$('import-dayflow').setAttribute('aria-pressed',String(mode==='dayflow'))}
 function showEmpty(){selected=null;setView('empty');renderItems();setSidebar(true);$('grid-wrap').hidden=true;$('empty').hidden=false;$('title').textContent='Your daily plan';$('description').textContent='Choose an item on the left, or add a new item.'}
 async function refresh(){try{items=await api('pm01_items?select=*&order=created_at.asc');sortItems();selected=items.find(item=>item.id===selected)?.id||null;renderItems();if(viewMode==='all')await showAll();else if(viewMode==='dayflow')await importDayflow();else if(selected)await choose();else{showEmpty();status('Connected · All changes saved')}}catch(error){status(error.message+' · Click to retry',true)}}
 async function apiRows(path){const rows=[];for(let offset=0;;offset+=1000){const page=await api(path+'&limit=1000&offset='+offset);rows.push(...page);if(page.length<1000)return rows}}
