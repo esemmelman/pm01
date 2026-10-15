@@ -2,7 +2,7 @@
 
 Public daily planner: https://esemmelman.github.io/pm01/
 
-Windows-style item list with add, rename, and delete. Single selection opens a daily grid from October 1, 2026 through June 30, 2027. Click the + in a Date cell to add a named entry for that date. Multiple entries can share a date. Click an entry in Information to open its rich text editor; its name and notes save automatically to Supabase, with automatic saving and retry on failure. The current frontend version is 1.3.8.
+Windows-style item list with add, rename, and delete. Single selection opens a daily grid from October 1, 2026 through December 31, 2027. Click the + in a Date cell to add a named entry for that date. Multiple entries can share a date. Click an entry in Information to open its rich text editor; its name and notes save automatically to Supabase, with automatic saving and retry on failure. The current frontend version is 1.3.9.
 
 The app opens with no planner selected. Selecting a planner hides the item panel so the calendar uses the full width; the chevron restores the listbox. All combines the dated information from every planner and labels entries with the planner name in parentheses. Entries in All still open their rich text notes; additions use an individual planner's calendar. The Date column is 112 pixels wide.
 
@@ -18,7 +18,7 @@ Static source is in `dist/`. Serve with any static web server. Changes pushed to
 
 Import DayFlow opens a separate, read-only calendar. DayFlow data is stored in `pm01_dayflow_entries` and never written to individual planner items.
 
-DayFlow import needs no sign-in. It reads the explicitly public, read-only `pm01_dayflow_calendar_export` view in DayFlow, limited to task IDs, titles, dates, and start times for October 2026–June 2027.
+DayFlow import needs no sign-in. It reads the explicitly public, read-only `pm01_dayflow_calendar_export` view in DayFlow, limited to task IDs, titles, dates, and start times for October 2026–December 2027.
 
 The calendar heading shows days from today's Los Angeles date to the next upcoming item, followed by end with weeks and total days until the last item in the current view. For example: Next: 14 days   end: 8 weeks, 56 days. Weeks use one decimal when needed. Past items are excluded from Next; empty calendars use dashes, and an entirely past calendar shows end: 0 weeks, 0 days.
 
