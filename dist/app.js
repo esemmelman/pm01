@@ -1,7 +1,7 @@
 const URL='https://fgomaujsdblpzxhnnqrg.supabase.co/rest/v1/';
 const KEY='sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i';
 const $=id=>document.getElementById(id);
-const APP_VERSION='1.3.6';
+const APP_VERSION='1.3.7';
 let items=[],selected=null,loadVersion=0,dialogMode='add',viewMode='empty';
 let itemClickTimer;
 function cancelItemClick(){clearTimeout(itemClickTimer);itemClickTimer=null}
@@ -17,9 +17,11 @@ function updateInformationSpan(){
   const dates=[...informationDates,...(viewMode==='dayflow'?[]:dateItems.filter(entry=>(viewMode==='all'||entry.item_id===selected)&&dateCells.has(entry.entry_date)).map(entry=>entry.entry_date))].sort();
   const label=$('information-span');label.hidden=false;
   const today=todayKey(),next=dates.find(date=>date>=today),last=dates.at(-1);
-  const weeksUntil=date=>Math.round(Math.max(0,(Date.parse(date+'T00:00:00Z')-Date.parse(today+'T00:00:00Z'))/86400000)/7*10)/10;
-  label.textContent=`Next task: ${next?weeksUntil(next):'—'}\u00a0\u00a0\u00a0Total: ${last?weeksUntil(last):'—'}`;
-  label.title=`Weeks from ${today} · Next: ${next||'none'} · Last: ${last||'none'} · Rounded to one decimal`;
+  const daysUntil=date=>Math.max(0,Math.round((Date.parse(date+'T00:00:00Z')-Date.parse(today+'T00:00:00Z'))/86400000));
+  const totalDays=last?daysUntil(last):null;
+  const totalWeeks=totalDays===null?null:Math.round(totalDays/7*10)/10;
+  label.textContent=`Next task: ${next?daysUntil(next):'—'}\u00a0\u00a0\u00a0Total: ${last?`${totalWeeks}, ${totalDays}`:'—, —'}`;
+  label.title=`From ${today} · Next task: days until ${next||'none'} · Total: weeks, days until ${last||'none'}`;
 }
 function hasPending(){return pending.size||notesPending.size||datePending.size||multiPending.size}
 function todayKey(now=new Date()){const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Los_Angeles',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now);const part=type=>parts.find(p=>p.type===type).value;return `${part('year')}-${part('month')}-${part('day')}`}
