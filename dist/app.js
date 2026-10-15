@@ -1,7 +1,7 @@
 const URL='https://fgomaujsdblpzxhnnqrg.supabase.co/rest/v1/';
 const KEY='sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i';
 const $=id=>document.getElementById(id);
-const APP_VERSION='1.3.16';
+const APP_VERSION='1.3.17';
 let items=[],selected=null,loadVersion=0,dialogMode='add',viewMode='empty';
 let itemClickTimer;
 function cancelItemClick(){clearTimeout(itemClickTimer);itemClickTimer=null}
@@ -305,7 +305,7 @@ function layoutHorizontalBalloons(){
     for(const balloon of layer.querySelectorAll('.horizontal-balloon')){
       const day=strip.querySelector(`.horizontal-day[data-date="${balloon.dataset.date}"]`).getBoundingClientRect();
       const anchor=day.left+day.width/2-origin.left,width=balloon.offsetWidth,height=balloon.offsetHeight;
-      const left=Math.max(0,Math.min(anchor-12,origin.width-width));let top=18;
+      const left=Math.max(0,Math.min(anchor-width/2,origin.width-width));let top=18;
       let collision;while((collision=placed.find(other=>left<other.right+10&&left+width+10>other.left&&top<other.bottom+10&&top+height+10>other.top)))top=collision.bottom+10;
       balloon.style.left=left+'px';balloon.style.top=top+'px';
       const line=layer.querySelector(`.horizontal-connector[data-date="${balloon.dataset.date}"]`);line.style.left=anchor+'px';line.style.height=top+'px';
