@@ -1,7 +1,7 @@
 const URL='https://fgomaujsdblpzxhnnqrg.supabase.co/rest/v1/';
 const KEY='sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i';
 const $=id=>document.getElementById(id);
-const APP_VERSION='1.3.4';
+const APP_VERSION='1.3.5';
 let items=[],selected=null,loadVersion=0,dialogMode='add',viewMode='empty';
 let itemClickTimer;
 function cancelItemClick(){clearTimeout(itemClickTimer);itemClickTimer=null}
@@ -20,7 +20,7 @@ function updateInformationSpan(){
   const first=dates[0],last=dates[dates.length-1];
   const days=Math.round((Date.parse(last+'T00:00:00Z')-Date.parse(first+'T00:00:00Z'))/86400000);
   const weeks=Math.floor(days/7),remainder=days%7;
-  label.textContent=` (${weeks} ${weeks===1?'week':'weeks'}, ${remainder} ${remainder===1?'day':'days'})`;
+  label.textContent=`\u00a0\u00a0\u00a0${weeks} ${weeks===1?'week':'weeks'} and ${remainder} ${remainder===1?'day':'days'}, ${days} ${days===1?'day':'days'}`;
   label.title=`${first} to ${last}`;
 }
 function hasPending(){return pending.size||notesPending.size||datePending.size||multiPending.size}

@@ -2,7 +2,7 @@
 
 Public daily planner: https://esemmelman.github.io/pm01/
 
-Windows-style item list with add, rename, and delete. Single selection opens a daily grid from October 1, 2026 through June 30, 2027. Click the + in a Date cell to add a named entry for that date. Multiple entries can share a date. Click an entry in Information to open its rich text editor; its name and notes save automatically to Supabase, with automatic saving and retry on failure. The current frontend version is 1.3.4.
+Windows-style item list with add, rename, and delete. Single selection opens a daily grid from October 1, 2026 through June 30, 2027. Click the + in a Date cell to add a named entry for that date. Multiple entries can share a date. Click an entry in Information to open its rich text editor; its name and notes save automatically to Supabase, with automatic saving and retry on failure. The current frontend version is 1.3.5.
 
 The app opens with no planner selected. Selecting a planner hides the item panel so the calendar uses the full width; the chevron restores the listbox. All combines the dated information from every planner and labels entries with the planner name in parentheses. Entries in All still open their rich text notes; additions use an individual planner's calendar. The Date column is 112 pixels wide.
 
@@ -20,4 +20,4 @@ Import DayFlow opens a separate, read-only calendar. DayFlow data is stored in `
 
 DayFlow import needs no sign-in. It reads the explicitly public, read-only `pm01_dayflow_calendar_export` view in DayFlow, limited to task IDs, titles, dates, and start times for October 2026–June 2027.
 
-The Information heading shows elapsed weeks and days between the first and last event dates in the current calendar, updating when events are added or moved. A single event date shows 0 weeks, 0 days; an empty calendar shows no span.
+The Information heading shows elapsed weeks and days between the first and last event dates in the current calendar, updating when events are added or moved. The heading uses three spaces before the span, for example: Information   3 weeks and 2 days, 23 days. A single event date shows 0 weeks and 0 days, 0 days; an empty calendar shows no span.
