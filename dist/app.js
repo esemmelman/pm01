@@ -1,7 +1,7 @@
 const URL='https://fgomaujsdblpzxhnnqrg.supabase.co/rest/v1/';
 const KEY='sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i';
 const $=id=>document.getElementById(id);
-const APP_VERSION='1.3.15';
+const APP_VERSION='1.3.16';
 let items=[],selected=null,loadVersion=0,dialogMode='add',viewMode='empty';
 let itemClickTimer;
 function cancelItemClick(){clearTimeout(itemClickTimer);itemClickTimer=null}
@@ -214,15 +214,15 @@ $('multiple-note-delete').onclick=async()=>{
 };
 
 // Each dated item has its own automatically saved rich text notes.
-function openDateAdd(itemId,date,label){if(dateCreating)return;dateDraft={itemId,date};$('date-add-heading').textContent='Add item · '+label;$('date-name').value='';$('date-add-error').textContent='';$('date-add-dialog').showModal();$('date-name').focus()}
+function openDateAdd(itemId,date,label){if(dateCreating)return;dateDraft={itemId,date};$('date-planner-field').hidden=!!itemId;const planners=$('date-planner');planners.replaceChildren(...items.map(item=>{const option=document.createElement('option');option.value=item.id;option.textContent=item.name;return option}));$('date-add-heading').textContent='Add item · '+label;$('date-name').value='';$('date-add-error').textContent='';$('date-add-dialog').showModal();$('date-name').focus()}
 $('date-add-cancel').onclick=()=>$('date-add-dialog').close();
 $('date-add-form').onsubmit=async event=>{
   event.preventDefault();if(dateCreating||!dateDraft)return;const title=$('date-name').value.trim();
   if(!title){$('date-add-error').textContent='Enter an item name.';return}
-  const draft=dateDraft;dateCreating=true;$('date-add-confirm').disabled=true;status('Adding item…');
+  const draft={...dateDraft,itemId:dateDraft.itemId||$('date-planner').value};if(!draft.itemId){$('date-add-error').textContent='Choose a planner for this item.';return}const originalDraft=dateDraft;dateCreating=true;$('date-add-confirm').disabled=true;status('Adding item…');
   try{const [entry]=await api('pm01_date_items','POST',{item_id:draft.itemId,entry_date:draft.date,title});
-    if(selected===draft.itemId){dateItems.push(entry);renderDateItems()}
-    if($('date-add-dialog').open&&dateDraft===draft)$('date-add-dialog').close();
+    if(selected===draft.itemId||viewMode==='all'){dateItems.push(entry);renderDateItems()}
+    if($('date-add-dialog').open&&dateDraft===originalDraft)$('date-add-dialog').close();
     status(hasPending()?'Unsaved changes…':'All changes saved');
   }catch(error){$('date-add-error').textContent=error.message;status('Could not add item: '+error.message,true)}
   finally{dateCreating=false;$('date-add-confirm').disabled=false}
@@ -276,7 +276,10 @@ function renderHorizontalCalendar(){
     const taskLayer=document.createElement('div');taskLayer.className='horizontal-task-layer';
     for(let day=1;day<=days;day++){
       const date=new Date(Date.UTC(month.getUTCFullYear(),month.getUTCMonth(),day)),iso=date.toISOString().slice(0,10);
-      const cell=document.createElement('div');cell.className='horizontal-day';cell.dataset.date=iso;cell.style.gridColumn=String(day+1);cell.style.gridRow='1';const offset=Math.round((Date.parse(iso+'T00:00:00Z')-Date.parse(last+'T00:00:00Z'))/86400000);
+      const canAdd=viewMode==='item'||viewMode==='all';
+      const cell=document.createElement(canAdd?'button':'div');cell.className='horizontal-day';
+      if(canAdd){cell.type='button';cell.setAttribute('aria-label','Add item for '+iso);cell.setAttribute('aria-haspopup','dialog');cell.onclick=()=>openDateAdd(viewMode==='all'?null:selected,iso,iso+' '+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][date.getUTCDay()])}
+      cell.dataset.date=iso;cell.style.gridColumn=String(day+1);cell.style.gridRow='1';const offset=Math.round((Date.parse(iso+'T00:00:00Z')-Date.parse(last+'T00:00:00Z'))/86400000);
       cell.title=`${iso} · ${Math.round(Math.abs(offset)/7*10)/10} weeks, ${Math.abs(offset)} days ${offset<0?'before':offset>0?'after':'from'} last task date (${last})`;
       if(iso===todayKey()){cell.classList.add('horizontal-today');cell.setAttribute('aria-current','date')}
       if([0,6].includes(date.getUTCDay()))cell.classList.add('horizontal-weekend');
