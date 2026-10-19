@@ -239,8 +239,8 @@ $('date-toolbar').addEventListener('click',event=>formatNotes($('date-note-edito
 enableNoteLinks($('date-note-editor'));
 $('date-note-close').onclick=()=>$('date-note-dialog').close();$('date-note-dialog').addEventListener('close',()=>{activeDateItem=null;flush()});$('date-note-retry').onclick=flush;
 
-const DAYFLOW_URL='https://ynfjfanvdvpyycoeweca.supabase.co';
-const DAYFLOW_KEY='sb_publishable_j7q6Ox0GVsUv68D3oQiOBA_2Avx50il';
+const DAYFLOW_URL='https://fgomaujsdblpzxhnnqrg.supabase.co';
+const DAYFLOW_KEY='sb_publishable_JOUqLZDnfGu_yCa6k6FVDQ_AYwpr72i';
 let importing=false;
 function dateStamp(now=new Date()){const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Los_Angeles',month:'2-digit',day:'2-digit',weekday:'short',hour:'numeric',minute:'2-digit',hour12:true}).formatToParts(now);const get=type=>parts.find(p=>p.type===type).value;return `${get('month')}-${get('day')} ${get('weekday')}. ${get('hour')}:${get('minute')} ${get('dayPeriod').toLowerCase()}`}
 function taskTime(time){const [hour,minute]=time.split(':');return `${Number(hour)%12||12}:${minute} ${Number(hour)<12?'am':'pm'}`}
